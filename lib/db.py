@@ -87,9 +87,9 @@ class SlushTableRow():
 	
 	def __setitem__(self, col, value):
 		if type(col).__name__ == "int":
-			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, self.fields[col]), (value,self.idx) ).fetchone()
+			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, self.fields[col]), (value,self.idx) )
 		if type(col).__name__ == "str":
-			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, col), (value,self.idx) ).fetchone()
+			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, col), (value,self.idx) )
 		self.__conn__.commit()
 	def toDict(self):
 		end = dict()
@@ -118,6 +118,8 @@ class SlushTable():
 			fields = list()
 			for b in a:
 				fields.append(b[1])
+			if fields[0] == "idx":
+				del fields[0]
 			self.fields = fields
 
 		self.__db__.execute("create table if not exists %s (%s)" % (self.table, "idx INTEGER PRIMARY KEY, " + ", ".join(fields) ) )
@@ -150,7 +152,7 @@ class SlushTable():
 		# Dictify it
 		end = list()
 		for a in data:
-			end.append( dict(zip(self.fields, a)) )
+			end.append( dict(zip(["idx"] + self.fields, a)) )
 		return end
 				
 	
@@ -201,6 +203,14 @@ class SlushTable():
 			del self[a["idx"]]
 		
 	def append(self, item):
+		if len(item) != len(self.fields):
+			raise TypeError
+		for a in item:
+			try:
+				self.fields.index(a)
+			except ValueError:
+				raise KeyError
+				
 		self.__db__.execute('insert into %s values (NULL, %s)' % (self.table, ", ".join(["NULL"]*len(self.fields))))
 		self.__conn__.commit()
 		self[self.__db__.execute('select idx from %s where idx = (select max(idx) from %s);' % (self.table, self.table)).fetchone()[0]] = item

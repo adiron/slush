@@ -13,9 +13,20 @@ You can iterate on the object just as a normal dictionary or list. It behaves in
 manner.
 
 Another thing. Suppose "data" is SlushTable object:
-
 	b = data[5]
-	
 b will actually become a pointer to that row. So any changes made TO b will be reflected
 in the DB.
 
+NOTE: iterating upon a SlushTable will NOT change it.
+	for a in data:
+		a["age"] = a["age"] + 10
+		
+Will have no effect on "data". However:
+	for a in data:
+		data[a["idx"]] = data[a["idx"]] + 10
+Will change it.
+
+To add a new row:
+	a.append( {"name": "Whatever", "phone": "555-666-777"} )
+	
+Remember: the dict must satisfy ALL of the table's 
