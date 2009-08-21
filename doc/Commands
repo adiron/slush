@@ -1,0 +1,14 @@
+How does adding commands work?
+
+Commands are stored in the dictionary "commands" in data/commands.py.
+
+It works in the following manner:
+
+	def cmd_goto(session, args, database):
+		session.send(...)
+		
+	commands = { ["go"] : cmd_goto }
+	
+session	 - the session of the command's issuer.
+args	 - the arguments passed on to the command.
+database - slush database.

@@ -1,21 +1,21 @@
-The db object can indeed be a bit frustrating to use for some. And so I'm writing this guide
-to make others' lives a bit easier.
+The db object can indeed be a bit frustrating to use for some. And so I'm
+writing this guide to make others' lives a bit easier.
 
 For a start, I'll show you some examples. Initializing a SlushTable object:
 
 	from lib import db
 	a = db.SlushTable("phonebook.db", "contacts", ["name", "phone"])
 	
-This will create "a", a table called "contacts" inside of the file "phonebook.db" with two
-columns. Actually 3, if you include "idx".
+This will create "a", a table called "contacts" inside of the file
+"phonebook.db" with two columns. Actually 3, if you include "idx".
 
-You can iterate on the object just as a normal dictionary or list. It behaves in the same
-manner.
+You can iterate on the object just as a normal dictionary or list. It behaves
+in the same manner.
 
 Another thing. Suppose "data" is SlushTable object:
 	b = data[5]
-b will actually become a pointer to that row. So any changes made TO b will be reflected
-in the DB.
+b will actually become a pointer to that row. So any changes made TO b will be
+reflected in the DB.
 
 NOTE: iterating upon a SlushTable will NOT change it.
 	for a in data:

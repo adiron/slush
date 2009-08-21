@@ -31,8 +31,12 @@ class SlushDict(dict):
 			self.__db__.execute('update %s set value=? where key=?' % self.table, (value, key))
 		except KeyError:
 			self.__db__.execute('insert into %s values (?, ?)' % self.table, (key, value))
-	def execute(self, command):
-		self.__db__.execute(command)		
+			
+	def execute(self, command, expansions=()):
+		if (type(expansions).__name__ != "NoneType") and (type(expansions).__name__ != "list") and (type(expansions).__name__ != "tuple"):
+			expansions = (expansions,)
+		a = self.__db__.execute(command, expansions)
+		return a
 		
 	def __contains__(self,key):
 		try:
@@ -40,7 +44,6 @@ class SlushDict(dict):
 		except KeyError:
 			return False
 		
-
 	def __delitem__(self, key): #deletes a key
 		self.__db__.execute('delete from %s where key=?' % self.table, (key,))
 	
@@ -49,7 +52,7 @@ class SlushDict(dict):
 
 	def __ne__(self, other):
 		return not self == other
-		
+
 	def keys(self):
 		return self.__todict__().keys()
 		
@@ -63,10 +66,12 @@ class SlushDict(dict):
 		return self.__todict__().__eq__(a)
 		
 	def derive(self, tbl):
-		"""This function returns an object of the same class as its parent based on a cursor from it. In other words, it allows several slush DB objects to be used at the same time."""
+		"""This function returns an object of the same class as its parent based on a cursor from it. In other
+        words, it allows several slush DB objects to be used at the same time."""
 		return SlushDict(cursor=self.__db__, table=tbl)
 		
 class SlushTableRow():
+	"""An internal class that represents a single row inside a SlushTable."""
 	def __init__(self, parent, idx):
 		'''fields is a list that contains the name of all columns.'''
 		self.parent = parent
@@ -77,24 +82,30 @@ class SlushTableRow():
 		
 	def __getitem__(self, col):
 		if type(col).__name__ == "int":
-			return self.__db__.execute('select %s from %s where idx=?' % (self.fields[col],self.table), (self.idx,) ).fetchone()[0]
+			return self.__db__.execute('select %s from %s where idx=?' %
+				(self.fields[col],self.table), (self.idx,) ).fetchone()[0]
 		if type(col).__name__ == "str":
-			return self.__db__.execute('select %s from %s where idx=?' % (col,self.table), (self.idx,) ).fetchone()[0]
+			return self.__db__.execute('select %s from %s where idx=?' %
+				(col,self.table), (self.idx,) ).fetchone()[0]
 		else:
 			print(type(col).__name__)
 	
 	def __setitem__(self, col, value):
 		if type(col).__name__ == "int":
-			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, self.fields[col]), (value,self.idx) )
+			self.__db__.execute('update %s set %s=? where idx=?' %
+				(self.table, self.fields[col]), (value,self.idx) )
 		if type(col).__name__ == "str":
-			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, col), (value,self.idx) )
+			self.__db__.execute('update %s set %s=? where idx=?' %
+				(self.table, col), (value,self.idx) )
 	def toDict(self):
+		"""Returns a representation of the object as a dictionary."""
 		end = dict()
 		for a in ["idx"] + list(self.fields):
 			end[a]=self[a]
 		return end
 	def __repr__(self):
 		"""Will fix this eventually to display the ACTUAL order..."""
+		# TODO
 		return self.toDict().__repr__()
 	
 	def __len__(self):
@@ -104,7 +115,8 @@ class SlushTableRow():
 		
 class SlushTable():
 	def __init__(self, file=None, table="slush", fields=None, cursor=None):
-		'''fields is a list that contains the name of all columns.'''
+		'''fields is a list that contains the name of all columns. When you first initialize a table that
+        doesn't exist in the database, you MUST provide table rows (excluding idx)'''
 		self.file = file
 		if file and (cursor == None): # If file is provided, this table is a master table.
 			
@@ -125,9 +137,8 @@ class SlushTable():
 				del fields[0]
 			self.fields = fields
 
-		 
-
-		self.__db__.execute("create table if not exists %s (%s)" % (self.table, "idx INTEGER PRIMARY KEY, " + ", ".join(fields) ) )
+		self.__db__.execute("create table if not exists %s (%s)" %
+			(self.table, "idx INTEGER PRIMARY KEY, " + ", ".join(fields) ) )
 	
 	def isEmpty(self, idx):
 		a = self.__db__.execute("select * from %s where idx=?" % (self.table), (idx,) ).fetchone()
@@ -165,9 +176,10 @@ class SlushTable():
 			try:
 				self[index]
 				if type(value).__name__ == "tuple" or type(value).__name__ == "list":
-					pass # TODO
+					for a in range(0, len(value)):
+						self[index][a] = value[a]
 					
-				if type(value).__name__ == "dict":
+				elif type(value).__name__ == "dict":
 					for (k,v) in value.items():
 						self[index][k] = v
 				else:
@@ -179,24 +191,29 @@ class SlushTable():
 			
 	def __delitem__(self, index):
 		if not self.isEmpty(index):
-			self.execute("delete from %s where idx=?" % (self.table), expansions=index )
+			self.execute(
+				"delete from %s where idx=?" % (self.table), expansions=index)
 		else:
 			raise ValueError
 						
 	def __len__(self):
-		return len(self.__db__.execute("select idx from %s" % self.table).fetchall())
+		return len(
+			self.__db__.execute("select idx from %s" % self.table).fetchall())
 		
 	def __repr__(self):
-		end = "{\n"
-		for a in self.where(""):
-			end = end + "\t" + a.__repr__() + "\n"
-		return end + "}"
+		end = ""
+		end = end + " | ".join(["idx"] + self.fields) + "\n"
+		for row in self:
+			pipeList = list()
+			for property in ["idx"] + self.fields:
+				pipeList.append(row[property].__repr__())
+			end = end + " | ".join(pipeList) + "\n"
+		return end
 
 					
 	def execute(self, command, expansions=()):
 		if (type(expansions).__name__ != "NoneType") and (type(expansions).__name__ != "list") and (type(expansions).__name__ != "tuple"):
 			expansions = (expansions,)
-			
 		a = self.__db__.execute(command, expansions)
 		return a
 		
@@ -205,6 +222,7 @@ class SlushTable():
 			del self[a["idx"]]
 		
 	def append(self, item):
+		"""Adds a """
 		if len(item) != len(self.fields):
 			raise TypeError
 		for a in item:
@@ -213,12 +231,16 @@ class SlushTable():
 			except ValueError:
 				raise KeyError
 				
-		self.__db__.execute('insert into %s values (NULL, %s)' % (self.table, ", ".join(["NULL"]*len(self.fields))))
-		self[self.__db__.execute('select idx from %s where idx = (select max(idx) from %s);' % (self.table, self.table)).fetchone()[0]] = item
+		self.__db__.execute('insert into %s values (NULL, %s)' %
+			(self.table, ", ".join(["NULL"]*len(self.fields))))
+		self[self.__db__.execute(
+			'select idx from %s where idx = (select max(idx) from %s);' %
+			(self.table, self.table)).fetchone()[0]] = item
 		
 		
 	def derive(self, tbl, cols=None):
-		"""This function returns an object of the same class as its parent based on a cursor from it. In other words, it allows several slush DB objects to be used at the same time."""
+		"""This function returns an object of the same class as its parent based on a cursor from it. In other
+        words, it allows several slush DB objects to be used at the same time."""
 		return SlushTable(cursor=self.__db__, table=tbl, fields=cols)
 		
 
