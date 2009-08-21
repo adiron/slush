@@ -1,17 +1,15 @@
-#!/usr/bin/python
-
-# the DB
-
 import sqlite3
 
 class SlushDict(dict):
-	def __init__(self, file, table):
+	def __init__(self, file=None, table="slush", cursor=None):
 		self.file = file
-		self.__conn__ = sqlite3.connect(file)
 		self.table = table
-		self.__db__ = self.__conn__.cursor()
+		if file and (cursor == None): # If file is provided, this table is a master table.
+			self.__conn__ = sqlite3.connect(file, isolation_level=None)
+			self.__db__ = self.__conn__.cursor()
+		else:
+			self.__db__ = cursor
 		self.__db__.execute("create table if not exists %s (key, value)" % self.table)
-		self.__conn__.commit()
 		
 	def __todict__(self):
 		end = dict()
@@ -33,10 +31,8 @@ class SlushDict(dict):
 			self.__db__.execute('update %s set value=? where key=?' % self.table, (value, key))
 		except KeyError:
 			self.__db__.execute('insert into %s values (?, ?)' % self.table, (key, value))
-		self.__conn__.commit()
 	def execute(self, command):
 		self.__db__.execute(command)		
-		self.__conn__.commit()
 		
 	def __contains__(self,key):
 		try:
@@ -47,7 +43,6 @@ class SlushDict(dict):
 
 	def __delitem__(self, key): #deletes a key
 		self.__db__.execute('delete from %s where key=?' % self.table, (key,))
-		self.__conn__.commit()
 	
 	def __repr__(self): #string representation
 		return self.__todict__().__repr__()
@@ -67,6 +62,10 @@ class SlushDict(dict):
 	def __eq__(self, a):
 		return self.__todict__().__eq__(a)
 		
+	def derive(self, tbl):
+		"""This function returns an object of the same class as its parent based on a cursor from it. In other words, it allows several slush DB objects to be used at the same time."""
+		return SlushDict(cursor=self.__db__, table=tbl)
+		
 class SlushTableRow():
 	def __init__(self, parent, idx):
 		'''fields is a list that contains the name of all columns.'''
@@ -74,8 +73,7 @@ class SlushTableRow():
 		self.fields = self.parent.fields
 		self.idx = idx
 		self.table = self.parent.table
-		self.__db__ = self.parent.__conn__.cursor()
-		self.__conn__ = self.parent.__conn__
+		self.__db__ = self.parent.__db__
 		
 	def __getitem__(self, col):
 		if type(col).__name__ == "int":
@@ -90,7 +88,6 @@ class SlushTableRow():
 			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, self.fields[col]), (value,self.idx) )
 		if type(col).__name__ == "str":
 			self.__db__.execute('update %s set %s=? where idx=?' % (self.table, col), (value,self.idx) )
-		self.__conn__.commit()
 	def toDict(self):
 		end = dict()
 		for a in ["idx"] + list(self.fields):
@@ -103,14 +100,20 @@ class SlushTableRow():
 	def __len__(self):
 		return len(self.fields)
 		
-class SlushTable():
-	def __init__(self, file, table, fields=None):
-		'''fields is a list that contains the name of all columns.'''
 
+		
+class SlushTable():
+	def __init__(self, file=None, table="slush", fields=None, cursor=None):
+		'''fields is a list that contains the name of all columns.'''
 		self.file = file
-		self.__conn__ = sqlite3.connect(file)
+		if file and (cursor == None): # If file is provided, this table is a master table.
+			
+			self.__conn__ = sqlite3.connect(file, isolation_level=None)
+			self.__db__ = self.__conn__.cursor()
+		else: # Making a DB from a cursor provided
+			self.__db__ = cursor
+		
 		self.table = table
-		self.__db__ = self.__conn__.cursor()
 		if fields:
 			self.fields = fields
 		else:
@@ -122,8 +125,9 @@ class SlushTable():
 				del fields[0]
 			self.fields = fields
 
+		 
+
 		self.__db__.execute("create table if not exists %s (%s)" % (self.table, "idx INTEGER PRIMARY KEY, " + ", ".join(fields) ) )
-		self.__conn__.commit()
 	
 	def isEmpty(self, idx):
 		a = self.__db__.execute("select * from %s where idx=?" % (self.table), (idx,) ).fetchone()
@@ -175,7 +179,7 @@ class SlushTable():
 			
 	def __delitem__(self, index):
 		if not self.isEmpty(index):
-			self.execute("delete from %s where idx=?" % (self.table), expansions=index, commit=True )
+			self.execute("delete from %s where idx=?" % (self.table), expansions=index )
 		else:
 			raise ValueError
 						
@@ -189,13 +193,11 @@ class SlushTable():
 		return end + "}"
 
 					
-	def execute(self, command, expansions=(), commit=True):
+	def execute(self, command, expansions=()):
 		if (type(expansions).__name__ != "NoneType") and (type(expansions).__name__ != "list") and (type(expansions).__name__ != "tuple"):
 			expansions = (expansions,)
 			
-		a = self.__db__.execute(command, expansions)		
-		if commit:
-			self.__conn__.commit()
+		a = self.__db__.execute(command, expansions)
 		return a
 		
 	def clear(self):
@@ -212,10 +214,13 @@ class SlushTable():
 				raise KeyError
 				
 		self.__db__.execute('insert into %s values (NULL, %s)' % (self.table, ", ".join(["NULL"]*len(self.fields))))
-		self.__conn__.commit()
 		self[self.__db__.execute('select idx from %s where idx = (select max(idx) from %s);' % (self.table, self.table)).fetchone()[0]] = item
-		self.__conn__.commit()
 		
 		
+	def derive(self, tbl, cols=None):
+		"""This function returns an object of the same class as its parent based on a cursor from it. In other words, it allows several slush DB objects to be used at the same time."""
+		return SlushTable(cursor=self.__db__, table=tbl, fields=cols)
 		
+
+
 

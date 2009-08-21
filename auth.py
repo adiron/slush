@@ -61,7 +61,7 @@ class object():
 	def __setitem__(self, index, val):
 		self.attributes[index] = val
 		
-class session():
+class Session():
 	def __init__(self):
 		self.user = None
 		self.logged_in = False
