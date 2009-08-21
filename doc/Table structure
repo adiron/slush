@@ -1,0 +1,18 @@
+
+FILE: data/login.db
+
+Table "info":
+	Contains login related information. SlushDict:
+		"salt" - contains the server's salt.
+		"MOTD" - contains the server's MOTD, the one displayed BEFORE login.
+		"name" - contains the server's friendly name. Example: "Lands of Mystery"
+
+Table "users":
+	Contains the users' accounts' details. SlushTable:
+		idx
+		"password" - hashed password.
+		"username" - actual username.
+		"banned" - boolean. Is the user banned or not?
+		"ban_reason" - string.
+		"last_ip" - user's last IP/hostname as a string.
+
