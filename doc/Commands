@@ -4,7 +4,7 @@ Commands are stored in the dictionary "commands" in data/commands.py.
 
 It works in the following manner:
 
-	def cmd_goto(session, args, database):
+	def cmd_goto(args, session):
 		session.send(...)
 		
 	commands = { ["go"] : cmd_goto }

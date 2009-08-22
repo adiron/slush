@@ -30,3 +30,15 @@ To add a new row:
 	a.append( {"name": "Whatever", "phone": "555-666-777"} )
 	
 Remember: the dict must satisfy ALL of the table's 
+
+EXAMPLES:
+	>>> a.append({ "name": "Adi", "phone": "555-666-777"})
+	>>> a
+	idx | name | phone
+	1 | 'Adi' | '555-666-777'
+
+	>>> a[1]
+	{'phone': '555-666-777', 'name': 'Adi', 'idx': 1}
+	>>> a[1]["name"] = "Dushkin"
+	>>> a[1]
+	{'phone': '555-666-777', 'name': 'Dushkin', 'idx': 1}

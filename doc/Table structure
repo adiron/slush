@@ -6,6 +6,7 @@ Table "info":
 		"salt" - contains the server's salt.
 		"MOTD" - contains the server's MOTD, the one displayed BEFORE login.
 		"name" - contains the server's friendly name. Example: "Lands of Mystery"
+		"allowed_attempts" - allowed login attempts before account lockdown.
 
 Table "users":
 	Contains the users' accounts' details. SlushTable:
@@ -15,4 +16,10 @@ Table "users":
 		"banned" - boolean. Is the user banned or not?
 		"ban_reason" - string.
 		"last_ip" - user's last IP/hostname as a string.
+		"login_attempts" - the number of login attempts from this user.
+		"last_login" - UNIX time of user's last log in.
+		"logged_in" - boolean. Is the user logged in or not?
+		"sessionID" - int or None. The ID of the user's current session.
+		"registered" - UNIX time of user's registration date.
+		
 
