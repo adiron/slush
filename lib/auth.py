@@ -17,10 +17,14 @@ import datetime
 
 class Session():
 	def __init__(self, socket, address, data):
-		self.user = None # The user associated with the session.
+		self.name = None # The user associated with the session.
 		self.socket = socket # The socket associated with the session.
 		self.address = address
 		self.data = data
+		self.wrapup = False
+	
+	def send(self, text, channel="SYSTEM"):
+		self.socket.send(byte(text))
 
 class User():
 	# The user object is oblivious to the game world.

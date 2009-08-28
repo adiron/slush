@@ -15,8 +15,9 @@
 import sqlite3
 
 class SlushDict(dict):
-	def __init__(self, file=None, table="slush", cursor=None):
+	def __init__(self, file=None, table="slush", cursor=None, luaMode=False):
 		self.file = file
+		self.luaMode = luaMode # If Lua mode is on, empty places return "None".
 		self.table = table
 		if file and (cursor == None): # If file is provided, this table is a master table.
 			self.__conn__ = sqlite3.connect(file, isolation_level=None)
@@ -37,7 +38,10 @@ class SlushDict(dict):
 		try:
 			return self.__db__.execute('select value from %s where key=?' % self.table, (item,)).fetchone()[0]
 		except TypeError:
-			raise KeyError
+			if self.luaMode:
+				return None
+			else:
+				raise KeyError
 			
 	def __setitem__(self, key, value):
 		try:
@@ -47,7 +51,8 @@ class SlushDict(dict):
 			self.__db__.execute('insert into %s values (?, ?)' % self.table, (key, value))
 			
 	def execute(self, command, expansions=()):
-		if (type(expansions).__name__ != "NoneType") and (type(expansions).__name__ != "list") and (type(expansions).__name__ != "tuple"):
+		if (type(expansions).__name__ != "NoneType") and (
+		type(expansions).__name__ != "list") and (type(expansions).__name__ != "tuple"):
 			expansions = (expansions,)
 		a = self.__db__.execute(command, expansions)
 		return a
@@ -227,7 +232,8 @@ class SlushTable():
 
 					
 	def execute(self, command, expansions=()):
-		if (type(expansions).__name__ != "NoneType") and (type(expansions).__name__ != "list") and (type(expansions).__name__ != "tuple"):
+		if (type(expansions).__name__ != "NoneType") and (type(expansions).__name__ != "list") and (
+			type(expansions).__name__ != "tuple"):
 			expansions = (expansions,)
 		a = self.__db__.execute(command, expansions)
 		return a

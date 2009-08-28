@@ -28,3 +28,10 @@ def Parse(text, session):
 		raise InvalidCommand
 
 	func(args[1:], session)
+
+def Login(text, session):
+	"""This really is a placeholder. In the future it will actually authenticate."""
+	text = text.strip()
+	session.send("Username: ")
+	session.user.name = text
+	session.user.authenticated = True

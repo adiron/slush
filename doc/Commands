@@ -1,6 +1,6 @@
 How does adding commands work?
 
-Commands are stored in the dictionary "commands" in data/commands.py.
+Commands are stored in the dictionary "commands" in lib/data/commands.py.
 
 It works in the following manner:
 

@@ -15,6 +15,7 @@
 import socket
 import threading
 import auth
+import parse
 
 class Server():
 	def __init__(self, database):
@@ -22,23 +23,49 @@ class Server():
 		self.data = database
 		self.port = self.data.info["port"]
 		self.clients = HolesList()
-		self.__wrapup = False # Internal use only. This is true when you want the server to go down.
+		self.wrapup = False # Internal use only. This is true when you want the server to go down.
 	def newSession(self, sock, address):
 		a = self.clients.append(
 			auth.Session(sock, address, self.data))
 		return self.clients[a]
 	def newConnection(self, session):
 		"""This function handles new connections."""
-		while session.authenticated
+		while not session.wrapup:
+			a = self.recv(session.socket)
+			while a:
+				if session.user.authenticated:
+					parse.Parse(a, session)
+				else:
+					parse.Login(a, session)
+		session.sock.close()
+			
 		
+		while session.user.authenticated == False:
+			# Display the "login prompt" mode
+			# More stuff will come here relating to
+			# disconnecting idiots.
+			
+		
+		# After that is done, display the usual prompt.
 	
-	def Start():
+	def recv(clientsock, buff):
+		"""This is a function to use as a kind of utility. It is called by other functions here and
+		returns some input from the socket. It's done this way to ease future developments."""
+		
+		data = clientsock.recv(buff)
+		try:
+			data = str(data,"UTF-8")
+		except UnicodeDecodeError:
+			data = str(data,"CP1252")
+		return data
+	
+	def start():
 		"""Start the server."""
 		# start accepting connections
-		self.__wrapup = False
-		while not self.__wrapup:
+		self.wrapup = False
+		while not self.wrapup:
 			# fork connection to new thread
-			print ('Listening to connections')
+			print ('Listening...')
 			clientsock, addr = serversock.accept()
 			print ('Incoming connection from: ', addr)
 			session = newSession(clientsock, addr)
