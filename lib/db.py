@@ -1,5 +1,5 @@
 # Slush - A Python MUD/MUSH server
-# Copyright (C) 2009 Amit Ron
+# Copyright (C) 2009 Adi Ron
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU General
 # Public License as published by the Free Software Foundation, either version 3 of the License, or (at your
@@ -171,7 +171,8 @@ class SlushTable():
 		return self.where("").__iter__()
 			
 	def where(self, expression, expansions=() ):
-		"""Iterate except with the SQL WHERE expression as requested. Returns a COPY!"""
+		"""Iterate except with the SQL WHERE expression as requested. Returns a COPY!
+		And that copy is always a list."""
 		if expression:
 			where = "where " + expression
 		else:
@@ -236,7 +237,7 @@ class SlushTable():
 			del self[a["idx"]]
 		
 	def append(self, item):
-		"""Adds a """
+		"""Adds an item"""
 		if len(item) != len(self.fields):
 			raise TypeError
 		for a in item:
@@ -257,6 +258,11 @@ class SlushTable():
         words, it allows several slush DB objects to be used at the same time."""
 		return SlushTable(cursor=self.__db__, table=tbl, fields=cols)
 		
-
+class Database():
+	def __init__(self, data):
+		"""The 'data' is an SQLite cursor (__db__ in slushdb objects for instance)
+		IT ASSUMES IT HAS BEEN INITIALIZED!"""
+		self.info = SlushDict(table="info", cursor=database)
+		self.users = SlushTable(table="users", cursor=database)
 
 

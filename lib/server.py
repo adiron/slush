@@ -1,5 +1,5 @@
 # Slush - A Python MUD/MUSH server
-# Copyright (C) 2009 Amit Ron
+# Copyright (C) 2009 Adi Ron
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU General
 # Public License as published by the Free Software Foundation, either version 3 of the License, or (at your
@@ -13,10 +13,38 @@
 # <http://www.gnu.org/licenses/>.
 
 import socket
+import threading
+import auth
 
 class Server():
-    def __init__(self):
-		pass
+	def __init__(self, database):
+		"""Where database is a simple database object"""
+		self.data = database
+		self.port = self.data.info["port"]
+		self.clients = HolesList()
+		self.__wrapup = False # Internal use only. This is true when you want the server to go down.
+	def newSession(self, sock, address):
+		a = self.clients.append(
+			auth.Session(sock, address, self.data))
+		return self.clients[a]
+	def newConnection(self, session):
+		"""This function handles new connections."""
+		while session.authenticated
+		
+	
+	def Start():
+		"""Start the server."""
+		# start accepting connections
+		self.__wrapup = False
+		while not self.__wrapup:
+			# fork connection to new thread
+			print ('Listening to connections')
+			clientsock, addr = serversock.accept()
+			print ('Incoming connection from: ', addr)
+			session = newSession(clientsock, addr)
+			self.threads.append(threading.Thread(target=newConnection, args=(session)))
+			self.threads[len(self.threads)-1].start()
+
 
 class HolesList(list):
 	def __delitem__(self, i):

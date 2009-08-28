@@ -7,6 +7,7 @@ Table "info":
 		"MOTD" - contains the server's MOTD, the one displayed BEFORE login.
 		"name" - contains the server's friendly name. Example: "Lands of Mystery"
 		"allowed_attempts" - allowed login attempts before account lockdown.
+		"port" - the server's port
 
 Table "users":
 	Contains the users' accounts' details. SlushTable:
@@ -21,5 +22,3 @@ Table "users":
 		"logged_in" - boolean. Is the user logged in or not?
 		"sessionID" - int or None. The ID of the user's current session.
 		"registered" - UNIX time of user's registration date.
-		
-
