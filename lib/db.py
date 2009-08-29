@@ -14,7 +14,7 @@
 
 import sqlite3
 
-class SlushDict(dict):
+class SlushDict():
 	def __init__(self, file=None, table="slush", cursor=None, luaMode=False):
 		self.file = file
 		self.luaMode = luaMode # If Lua mode is on, empty places return "None".
@@ -27,13 +27,13 @@ class SlushDict(dict):
 		self.__db__.execute("create table if not exists %s (key, value)" % self.table)
 		
 	def __todict__(self):
+		"""Converts the object into a dictionary."""
 		end = dict()
 		everything = self.__db__.execute("select * from %s order by key" % self.table).fetchall()
 		for a in everything:
 			end[a[0]] = a[1]
 		return end
-		
-		
+
 	def __getitem__(self, item):
 		try:
 			return self.__db__.execute('select value from %s where key=?' % self.table, (item,)).fetchone()[0]
@@ -86,7 +86,7 @@ class SlushDict(dict):
 		
 	def derive(self, tbl):
 		"""This function returns an object of the same class as its parent based on a cursor from it. In other
-        words, it allows several slush DB objects to be used at the same time."""
+        words, it allows several slush DB objects to be used at the same time. That's one way."""
 		return SlushDict(cursor=self.__db__, table=tbl)
 		
 class SlushTableRow():
@@ -102,7 +102,7 @@ class SlushTableRow():
 	def __getitem__(self, col):
 		if type(col).__name__ == "int":
 			return self.__db__.execute('select %s from %s where idx=?' %
-				(self.fields[col],self.table), (self.idx,) ).fetchone()[0]
+				(self.fields[col],self.table), (self.idx,) ).fetchone()
 		if type(col).__name__ == "str":
 			return self.__db__.execute('select %s from %s where idx=?' %
 				(col,self.table), (self.idx,) ).fetchone()[0]
@@ -265,9 +265,9 @@ class SlushTable():
 		return SlushTable(cursor=self.__db__, table=tbl, fields=cols)
 		
 class Database():
-	def __init__(self, data):
+	def __init__(self, database):
 		"""The 'data' is an SQLite cursor (__db__ in slushdb objects for instance)
-		IT ASSUMES IT HAS BEEN INITIALIZED!"""
+		IT ASSUMES IT HAS BEEN INITIALIZED! DON'T BE AN IDIOT."""
 		self.info = SlushDict(table="info", cursor=database)
 		self.users = SlushTable(table="users", cursor=database)
 

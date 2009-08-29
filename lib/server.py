@@ -14,8 +14,8 @@
 
 import socket
 import threading
-import auth
-import parse
+from . import auth
+from . import parse
 
 class Server():
 	def __init__(self, database):
@@ -23,30 +23,27 @@ class Server():
 		self.data = database
 		self.port = self.data.info["port"]
 		self.clients = HolesList()
+		self.threads = HolesList()
 		self.wrapup = False # Internal use only. This is true when you want the server to go down.
+		
+		self.serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		
 	def newSession(self, sock, address):
 		a = self.clients.append(
 			auth.Session(sock, address, self.data))
 		return self.clients[a]
 	def newConnection(self, session):
 		"""This function handles new connections."""
+		session.send(self.data.info["motd"])
 		while not session.wrapup:
 			a = self.recv(session.socket)
 			while a:
 				if session.user.authenticated:
-					parse.Parse(a, session)
+					parse.Parse(a, session) # Authenticated prompt
 				else:
-					parse.Login(a, session)
+					parse.Login(a, session) # Unauthenticated prompt
 		session.sock.close()
-			
-		
-		while session.user.authenticated == False:
-			# Display the "login prompt" mode
-			# More stuff will come here relating to
-			# disconnecting idiots.
-			
-		
-		# After that is done, display the usual prompt.
+
 	
 	def recv(clientsock, buff):
 		"""This is a function to use as a kind of utility. It is called by other functions here and
@@ -59,18 +56,24 @@ class Server():
 			data = str(data,"CP1252")
 		return data
 	
-	def start():
+	def start(self):
 		"""Start the server."""
+		self.serversock.bind(("localhost", int(self.data.info["port"])))
+		self.serversock.listen(2)
 		# start accepting connections
 		self.wrapup = False
 		while not self.wrapup:
 			# fork connection to new thread
 			print ('Listening...')
-			clientsock, addr = serversock.accept()
+			clientsock, addr = self.serversock.accept()
 			print ('Incoming connection from: ', addr)
-			session = newSession(clientsock, addr)
-			self.threads.append(threading.Thread(target=newConnection, args=(session)))
-			self.threads[len(self.threads)-1].start()
+			session = self.newSession(clientsock, addr)
+			a = self.threads.append(threading.Thread(target=self.newConnection, args=(session,)))
+			self.threads[a].start()
+	
+	def stop(self):
+		"""Stops the server. Closes the sock."""
+		self.serversock.close()
 
 
 class HolesList(list):
