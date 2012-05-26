@@ -1,0 +1,6 @@
+from lib import db
+a = db.SlushTable("meow.tmp", "meow")
+for b in a:
+	print(b)
+	
+a[1] = ["Adi", "005"]

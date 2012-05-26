@@ -24,7 +24,10 @@ class Session():
 		self.wrapup = False
 	
 	def send(self, text, channel="SYSTEM"):
-		self.socket.send(byte(text))
+		# Channel isn't actually used at this point.
+		if text == None:
+			text = ""
+		self.socket.send(bytes(text, "UTF-8"))
 
 class User():
 	# The user object is oblivious to the game world.

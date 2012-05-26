@@ -17,6 +17,7 @@ import sqlite3
 class SlushDict():
 	def __init__(self, file=None, table="slush", cursor=None, luaMode=False):
 		self.file = file
+
 		self.luaMode = luaMode # If Lua mode is on, empty places return "None".
 		self.table = table
 		if file and (cursor == None): # If file is provided, this table is a master table.
@@ -56,6 +57,7 @@ class SlushDict():
 			expansions = (expansions,)
 		a = self.__db__.execute(command, expansions)
 		return a
+
 		
 	def __contains__(self,key):
 		try:
@@ -258,17 +260,21 @@ class SlushTable():
 			'select idx from %s where idx = (select max(idx) from %s);' %
 			(self.table, self.table)).fetchone()[0]] = item
 		
-		
-	def derive(self, tbl, cols=None):
+	
+	def derive(self, tbl):
 		"""This function returns an object of the same class as its parent based on a cursor from it. In other
-        words, it allows several slush DB objects to be used at the same time."""
-		return SlushTable(cursor=self.__db__, table=tbl, fields=cols)
+        words, it allows several slush DB objects to be used at the same time. That's one way."""
+		return SlushDict(cursor=self.__db__, table=tbl)
 		
 class Database():
-	def __init__(self, database):
+	def __init__(self, filename):
 		"""The 'data' is an SQLite cursor (__db__ in slushdb objects for instance)
 		IT ASSUMES IT HAS BEEN INITIALIZED! DON'T BE AN IDIOT."""
-		self.info = SlushDict(table="info", cursor=database)
+		
+		database = sqlite3.connect(filename, isolation_level=None).cursor()
+		self.info = SlushDict(table="info", cursor=database, luaMode=True)
 		self.users = SlushTable(table="users", cursor=database)
+		self.info.file = filename
+		self.users.file = filename
 
 

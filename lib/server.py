@@ -16,25 +16,30 @@ import socket
 import threading
 from . import auth
 from . import parse
+from . import db
 
 class Server():
-	def __init__(self, database):
+	def __init__(self, database, verbosive=False):
 		"""Where database is a simple database object"""
 		self.data = database
 		self.port = self.data.info["port"]
 		self.clients = HolesList()
 		self.threads = HolesList()
+		self.dbfile = database.info.file
 		self.wrapup = False # Internal use only. This is true when you want the server to go down.
-		
+		self.verbosive = verbosive
 		self.serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		if verbosive: print("Slush starting up.")
 		
 	def newSession(self, sock, address):
 		a = self.clients.append(
 			auth.Session(sock, address, self.data))
 		return self.clients[a]
-	def newConnection(self, session):
+	def newConnection(self, session, newDB):
 		"""This function handles new connections."""
-		session.send(self.data.info["motd"])
+		session.data = db.Database(newDB)
+		
+		session.send(session.data.info["motd"])
 		while not session.wrapup:
 			a = self.recv(session.socket)
 			while a:
@@ -43,7 +48,7 @@ class Server():
 				else:
 					parse.Login(a, session) # Unauthenticated prompt
 		session.sock.close()
-
+		
 	
 	def recv(clientsock, buff):
 		"""This is a function to use as a kind of utility. It is called by other functions here and
@@ -58,6 +63,7 @@ class Server():
 	
 	def start(self):
 		"""Start the server."""
+		if self.verbosive: print("Binding to port: %s" % self.data.info["port"])
 		self.serversock.bind(("localhost", int(self.data.info["port"])))
 		self.serversock.listen(2)
 		# start accepting connections
@@ -68,12 +74,15 @@ class Server():
 			clientsock, addr = self.serversock.accept()
 			print ('Incoming connection from: ', addr)
 			session = self.newSession(clientsock, addr)
-			a = self.threads.append(threading.Thread(target=self.newConnection, args=(session,)))
+			if self.verbosive: print("Forking new connection. DB file: %s" % self.data.info.file)
+			a = self.threads.append(threading.Thread(target=self.newConnection, args=(
+				session, self.dbfile)))
 			self.threads[a].start()
 	
 	def stop(self):
 		"""Stops the server. Closes the sock."""
 		self.serversock.close()
+		self.wrapup = True
 
 
 class HolesList(list):
